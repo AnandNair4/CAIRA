@@ -1,28 +1,30 @@
-from dataclasses import dataclass, field
-from typing import Literal, Optional
-from datetime import datetime
+from typing import Literal
+
+from pydantic import BaseModel, Field
 
 TrustTier = Literal["untrusted", "corroborated", "verified"]
+Verdict = Literal["benign", "uncertain", "malicious"]
+Action = Literal["none", "escalate", "isolate_host", "block_ip"]
 
-@dataclass
-class Alert:
+
+class Alert(BaseModel):
     alert_id: str
     alert_type: str
     source_ip: str
     target_user: str
     timestamp: str
 
-@dataclass
-class EvidenceItem:
+
+class EvidenceItem(BaseModel):
     source_tool: str
     trust_tier: TrustTier
     content: dict
-    raw_strength: float  # 0.0-1.0, how strongly this evidence suggests malicious activity
+    raw_strength: float = Field(ge=0.0, le=1.0, description="0.0-1.0, how strongly this evidence suggests malicious activity")
 
-@dataclass
-class Decision:
+
+class Decision(BaseModel):
     alert_id: str
-    verdict: Literal["benign", "uncertain", "malicious"]
-    confidence: float
-    action: Literal["none", "escalate", "isolate_host", "block_ip"]
-    cited_evidence: list[str] = field(default_factory=list)
+    verdict: Verdict
+    confidence: float = Field(ge=0.0, le=1.0)
+    action: Action
+    cited_evidence: list[str] = Field(default_factory=list)

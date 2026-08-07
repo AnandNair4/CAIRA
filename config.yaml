@@ -1,0 +1,15 @@
+# config.yaml
+decision_thresholds:
+  malicious: 0.75
+  uncertain: 0.40
+agent:
+  model: claude-sonnet-4-6
+  max_iterations: 15
+trust_weights:
+  verified: 1.0
+  corroborated: 0.6
+  untrusted: 0.2
+db:
+  url: sqlite:///mock_soc.db
+logging:
+  level: INFO

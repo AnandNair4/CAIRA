@@ -1,23 +1,34 @@
+from sqlalchemy import select
+
+from db.database import get_session_factory
+from db.models import ThreatIntelRecord
 from ingestion.schema import EvidenceItem
 from tools.base import Tool
 
-MOCK_THREAT_INTEL = {
-    "203.0.113.5": {"malicious": True, "confidence": 0.72},
-    "8.8.8.8": {"malicious": False, "confidence": 0.0},
-}
 
 class ThreatIntelTool(Tool):
     name = "threat_intel_lookup"
     description = "Checks an IP address against threat intelligence feeds."
 
     def run(self, ip: str) -> EvidenceItem:
-        result = MOCK_THREAT_INTEL.get(ip, {"malicious": False, "confidence": 0.0})
+        Session = get_session_factory()
+        with Session() as session:
+            row = session.scalar(
+                select(ThreatIntelRecord).where(ThreatIntelRecord.ip == ip)
+            )
+
+        if row is None:
+            result = {"malicious": False, "confidence": 0.0}
+        else:
+            result = {"malicious": row.malicious, "confidence": row.confidence}
+
         return EvidenceItem(
             source_tool=self.name,
             trust_tier="verified",
             content={"ip": ip, **result},
             raw_strength=result["confidence"],
         )
+
 
 def threat_intel_lookup(ip: str) -> EvidenceItem:
     return ThreatIntelTool().run(ip=ip)
